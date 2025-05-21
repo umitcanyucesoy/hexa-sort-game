@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,10 +18,32 @@ namespace HexaSort.Scripts.Board
         [SerializeField] private Vector2Int minMaxHexCount;
         [SerializeField] private Color[] colors;
         
+        private int currentStackCounter;
+
+        private void Awake()
+        {
+            HexStackController.OnStackPlaced += OnStackPlacedCallback;
+        }
+
+        private void OnDestroy()
+        {
+            HexStackController.OnStackPlaced -= OnStackPlacedCallback;
+        }
 
         private void Start()
         {
             GenerateStacks();
+        }
+
+        private void OnStackPlacedCallback(GridCell gridCell)
+        {
+            currentStackCounter++;
+
+            if (currentStackCounter >= 3)
+            {
+                currentStackCounter = 0;
+                GenerateStacks();
+            }
         }
 
         private void GenerateStacks()
@@ -42,7 +65,7 @@ namespace HexaSort.Scripts.Board
             
             for (int i = 0; i < amount; i++)
             {
-                Vector3 hexagonLocalPos = Vector3.up * i * .2f;
+                Vector3 hexagonLocalPos = Vector3.up * (i * .2f);
                 Vector3 spawnPos = hexStack.transform.TransformPoint(hexagonLocalPos);
                 
                 Hexagon hexagonInstance = Instantiate(hexagonPrefab, spawnPos, Quaternion.identity, hexStack.transform);
@@ -61,7 +84,6 @@ namespace HexaSort.Scripts.Board
 
             if (colorList.Count <= 0)
             {
-                Debug.LogError("There are no colors in the stack");
                 return null;
             }
             
@@ -70,7 +92,6 @@ namespace HexaSort.Scripts.Board
             
             if (colorList.Count <= 0)
             {
-                Debug.LogError("Only one color is allowed in the stack");
                 return null;
             }
             
