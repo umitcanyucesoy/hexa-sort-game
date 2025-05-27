@@ -684,7 +684,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.46174863, y: -0, z: -0, w: 0.8870109}
-  m_LocalPosition: {x: 0, y: 10, z: -11.1}
+  m_LocalPosition: {x: 0, y: 10.66, z: -10.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2303,8 +2303,8 @@ Transform:
   m_GameObject: {fileID: 759917887}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 1.6, z: 4.64}
-  m_LocalScale: {x: 3.174, y: 1.6158, z: 1}
+  m_LocalPosition: {x: -0.4542, y: 1.6, z: 6.11}
+  m_LocalScale: {x: 7.5408587, y: 1.6158, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 459270774}
@@ -2351,7 +2351,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 1950215cbee1c58479bdde5311e4dcd0, type: 3}
-  m_Color: {r: 0.35844064, g: 0.5201918, b: 0.6528301, a: 0.7254902}
+  m_Color: {r: 0.35844064, g: 0.5201918, b: 0.6528301, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -4179,8 +4179,8 @@ Transform:
   m_GameObject: {fileID: 1758214329}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000020191073, y: -0.7071068, z: 0.7071068, w: 0.0000020191073}
-  m_LocalPosition: {x: -0, y: 1.6, z: -15.91}
-  m_LocalScale: {x: 3.174, y: 1.2812, z: 1}
+  m_LocalPosition: {x: -0.28, y: 1.6, z: -14.24}
+  m_LocalScale: {x: 7.4120564, y: 1.2812, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 459270774}
@@ -4227,7 +4227,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 1950215cbee1c58479bdde5311e4dcd0, type: 3}
-  m_Color: {r: 0.35686275, g: 0.52156866, b: 0.6509804, a: 0.7254902}
+  m_Color: {r: 0.35686275, g: 0.52156866, b: 0.6509804, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -4688,11 +4688,15 @@ MonoBehaviour:
   hexagonStackPrefab: {fileID: -7412036172665917385, guid: d0484fac116222949bf11e126adfea60,
     type: 3}
   minMaxHexCount: {x: 5, y: 8}
-  colors:
-  - {r: 0, g: 0.7607843, b: 0, a: 0}
-  - {r: 0.6886792, g: 0.21764861, b: 0.21764861, a: 0}
-  - {r: 0.084104665, g: 0.74161947, b: 0.8490566, a: 0}
-  - {r: 0.8509804, g: 0.84058803, b: 0.082352914, a: 0}
+  materials:
+  - {fileID: 2100000, guid: 442731f0d75ce96469ea9167a8d591c9, type: 2}
+  - {fileID: 2100000, guid: 65a3408fba1e6e94b87850c57d0594be, type: 2}
+  - {fileID: 2100000, guid: 9390aeb88aec4d14cbe748384ae98b61, type: 2}
+  - {fileID: 2100000, guid: d4ad2c50f5500bb4aa07e11c464ff4be, type: 2}
+  entryDistance: 10
+  entryDuration: 0.3
+  entryEase: 27
+  siblingDelay: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

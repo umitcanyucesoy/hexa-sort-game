@@ -1,5 +1,6 @@
 using System;
 using DG.Tweening;
+using HexaSort.Scripts.Manager;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -27,6 +28,7 @@ namespace HexaSort.Scripts.Board
         private GridCell targetCell;
         private Vector3 initialPosition;
         private Tween currentTween;
+        private bool inputLocked;
 
         private void Awake()
         {
@@ -34,15 +36,31 @@ namespace HexaSort.Scripts.Board
             if(!mainCamera) mainCamera = Camera.main;
         }
 
-        private void OnEnable() => hexagonSelector.OnHexagonSelected += OnHexSelected;
-        private void OnDisable() => hexagonSelector.OnHexagonSelected -= OnHexSelected;
+        private void OnEnable()
+        {
+            hexagonSelector.OnHexagonSelected += OnHexSelected;
+            MergeManager.OnMergeStateChanged += MergeStateChanged;
+        }
+
+        private void OnDisable()
+        { 
+            hexagonSelector.OnHexagonSelected -= OnHexSelected;
+            MergeManager.OnMergeStateChanged -= MergeStateChanged;
+        } 
         private void OnDestroy() { currentTween?.Kill(); }
 
         private void Update()
         {
+            if (inputLocked) return;
+            
             if (Input.GetMouseButtonDown(0)) hexagonSelector.TrySelectHexagon();
             if (Input.GetMouseButton(0) && currentStack) DragStack();
             if (Input.GetMouseButtonUp(0) && currentStack) DropStack();
+        }
+        
+        private void MergeStateChanged(bool isMerging)
+        {
+            inputLocked = isMerging;
         }
 
         private void OnHexSelected(Hexagon hex)

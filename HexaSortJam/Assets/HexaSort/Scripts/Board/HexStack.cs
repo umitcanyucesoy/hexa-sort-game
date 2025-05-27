@@ -11,13 +11,13 @@ namespace HexaSort.Scripts.Board
         
         public bool ContainsHexagon(Hexagon hexagon) => Hexagons.Contains(hexagon);
         
-        public Color GetTopHexagonColor()
+        public Material GetTopHexagonMaterial()
         {
             if (Hexagons == null || Hexagons.Count == 0)
                 throw new InvalidOperationException(
                     $"[{name}] stack has no hexagons to get color from."
                 );
-            return Hexagons[^1].Color;
+            return Hexagons[^1].Material;
         }
 
         public void AddHexagon(Hexagon hexagon)

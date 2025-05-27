@@ -10,10 +10,11 @@ namespace HexaSort.Scripts.Board
         [SerializeField] private Collider hexagonCollider;
         
         private bool _isVanishing;
+        private Material _material;
         
         public HexStack HexStack { get; private set; }
-        public Color Color { get => renderer.material.color; set => renderer.material.color = value; }
-
+        public Material Material => _material;
+        
         public void Configure(HexStack hexStack)
         {
             HexStack = hexStack;
@@ -36,6 +37,12 @@ namespace HexaSort.Scripts.Board
                 .AppendInterval(delay)
                 .Append(transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack))
                 .AppendCallback(() => Destroy(gameObject));
+        }
+
+        public void SetMaterial(Material matToUse)
+        {
+            _material = matToUse;
+            if(renderer) renderer.material = matToUse;
         }
     }
 }

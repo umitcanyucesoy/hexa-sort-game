@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -9,6 +10,10 @@ namespace HexaSort.Scripts.Manager
 {
     public class MergeManager : MonoBehaviour
     {
+        public static bool IsMerging { get; private set; } = false;
+        private List<GridCell> updatedCells = new List<GridCell>();
+        public static event Action<bool> OnMergeStateChanged;
+        
         private void Awake()
         {
             HexStackController.OnStackPlaced += StackPlacedCallback;
@@ -26,40 +31,55 @@ namespace HexaSort.Scripts.Manager
 
         private IEnumerator StackPlacedCoroutine(GridCell gridCell)
         {
-            yield return CheckForMerge(gridCell);
+            if (!IsMerging)
+            {
+                IsMerging = true;
+                OnMergeStateChanged?.Invoke(true);
+            }
+            
+            updatedCells.Add(gridCell);
+
+            while (updatedCells.Count > 0)
+                yield return CheckForMerge(updatedCells[0]);
+            
+            IsMerging = false;
+            OnMergeStateChanged?.Invoke(false);
         }
 
         private IEnumerator CheckForMerge(GridCell gridCell)
         {
-            List<GridCell> neighborGridCells = GetNeighborGridCells(gridCell);
+            updatedCells.Remove(gridCell);
+            
+            if (!gridCell.IsOccupied)
+                yield break;
             
             var targetStack = gridCell.Stack;
             if (!targetStack || targetStack.Hexagons.Count == 0)
-                yield break;  
-            
-            Color gridCellTopHexColor = targetStack.GetTopHexagonColor();
-                
-            List<GridCell> similarNeighborGridCells = GetSimilarNeighborGridCells(gridCellTopHexColor, neighborGridCells.ToArray());
-
-            if (similarNeighborGridCells.Count <= 0)
                 yield break;
+
+            Material topMat = targetStack.GetTopHexagonMaterial();
+
+            var neighbors = GetNeighborGridCells(gridCell);
+            var sameNeighbors = GetSimilarNeighborGridCells(topMat, neighbors);
+
+            if (sameNeighbors.Count == 0) yield break;
             
-            List<Hexagon> hexagonsToAdd = GetHexagonsToAdd(gridCellTopHexColor, similarNeighborGridCells.ToArray());
-            
-            RemoveHexagonsFromStacks(hexagonsToAdd, similarNeighborGridCells.ToArray());
-            
-            foreach (var neighbor in similarNeighborGridCells)
+            updatedCells.AddRange(sameNeighbors);
+
+            var toMove = GetHexagonsToAdd(topMat, sameNeighbors);
+            RemoveHexagonsFromStacks(toMove, sameNeighbors);
+
+            foreach (var n in sameNeighbors)
             {
-                var stack = neighbor.Stack;
-                if (stack && stack.Hexagons.Count == 0)
+                if (n.Stack && n.Stack.Hexagons.Count == 0)
                 {
-                    Destroy(stack.gameObject);
-                    neighbor.ClearHexStack();
+                    Destroy(n.Stack.gameObject);
+                    n.ClearHexStack();
                 }
             }
-            
-            yield return MoveHexagons(hexagonsToAdd, gridCell);
-            yield return CheckForCompleteStack(gridCell, gridCellTopHexColor);
+
+            yield return MoveHexagons(toMove, gridCell);
+            yield return CheckForCompleteStack(gridCell, topMat);
         }
 
         private List<GridCell> GetNeighborGridCells(GridCell gridCell)
@@ -87,49 +107,39 @@ namespace HexaSort.Scripts.Manager
             return neighborGridCells;
         }
 
-        private List<GridCell> GetSimilarNeighborGridCells(Color gridCellTopHexColor, GridCell[] neighborGridCells)
+        private List<GridCell> GetSimilarNeighborGridCells(Material mat, List<GridCell> neighbors)
         {
-            List<GridCell> similarNeighborGridCells = new List<GridCell>();
-
-            foreach (var neighborGridCell in neighborGridCells)
+            var list = new List<GridCell>();
+            foreach (var n in neighbors)
             {
-                var neighborStack = neighborGridCell.Stack;
-                if (!neighborStack || neighborStack.Hexagons.Count == 0)
-                    continue;
-                
-                Color neighborGridCellTopHexColor = neighborGridCell.Stack.GetTopHexagonColor();
-                
-                if (gridCellTopHexColor == neighborGridCellTopHexColor)
-                    similarNeighborGridCells.Add(neighborGridCell);
-            }
-            
-            return similarNeighborGridCells;
-        }
-
-        private List<Hexagon> GetHexagonsToAdd(Color gridCellTopHexColor, GridCell[] similarNeighborGridCells)
-        {
-            List<Hexagon> hexagonsToAdd = new List<Hexagon>();
-
-            foreach (var neighborGridCell in similarNeighborGridCells)
-            {
-                HexStack neighborCellHexStack = neighborGridCell.Stack;
-
-                for (int i = neighborCellHexStack.Hexagons.Count - 1; i >= 0; i--)
+                if (n.Stack &&
+                    n.Stack.Hexagons.Count > 0 &&
+                    n.Stack.GetTopHexagonMaterial() == mat)
                 {
-                    Hexagon hexagon = neighborCellHexStack.Hexagons[i];
-
-                    if (!hexagon.Color.Equals(gridCellTopHexColor))
-                        break;
-                    
-                    hexagonsToAdd.Add(hexagon);
-                    hexagon.transform.SetParent(null);
+                    list.Add(n);
                 }
             }
-            
-            return hexagonsToAdd;
+            return list;
         }
 
-        private void RemoveHexagonsFromStacks(List<Hexagon> hexagonsToAdd, GridCell[] similarNeighborGridCells)
+        private List<Hexagon> GetHexagonsToAdd(Material mat, List<GridCell> sameNeighbors)
+        {
+            var outList = new List<Hexagon>();
+            foreach (var n in sameNeighbors)
+            {
+                var stack = n.Stack;
+                for (int i = stack.Hexagons.Count - 1; i >= 0; i--)
+                {
+                    var h = stack.Hexagons[i];
+                    if (h.Material != mat) break;
+                    outList.Add(h);
+                    h.transform.SetParent(null);
+                }
+            }
+            return outList;
+        }
+
+        private void RemoveHexagonsFromStacks(List<Hexagon> hexagonsToAdd, List<GridCell> similarNeighborGridCells)
         {
             foreach (var neighborGridCell in similarNeighborGridCells)
             {
@@ -166,15 +176,22 @@ namespace HexaSort.Scripts.Manager
             yield return allMoves.WaitForCompletion();  
         }
 
-        private IEnumerator CheckForCompleteStack(GridCell cell, Color topColor)
+        private IEnumerator CheckForCompleteStack(GridCell cell, Material mat)
         {
-            if (cell.Stack.Hexagons.Count < 10) yield break;
+            if (!cell.Stack || cell.Stack.Hexagons == null || cell.Stack.Hexagons.Count < 10)
+                yield break;
+            
+            if (!cell.Stack)
+            {
+                updatedCells.Remove(cell);   
+                yield break;
+            }
 
             var vanishing = new List<Hexagon>();
             for (int i = cell.Stack.Hexagons.Count - 1; i >= 0; i--)
             {
                 var h = cell.Stack.Hexagons[i];
-                if (h.Color != topColor) break;
+                if (h.Material != mat) break;
                 vanishing.Add(h);
             }
             if (vanishing.Count < 10) yield break;
@@ -187,6 +204,8 @@ namespace HexaSort.Scripts.Manager
                 cell.Stack.RemoveHexagon(h); 
                 delay += delayStep;
             }
+            
+            updatedCells.Add(cell);
 
             yield return new WaitForSeconds(delay + 0.2f);
 
