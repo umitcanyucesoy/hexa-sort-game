@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using HexaSort.Scripts.Board;
 using UnityEngine;
 
@@ -57,10 +58,7 @@ namespace HexaSort.Scripts.Manager
                 }
             }
             
-            MoveHexagons(hexagonsToAdd, gridCell);
-            
-            yield return new WaitForSeconds(0.2f + (hexagonsToAdd.Count + 1) * .05f);
-            
+            yield return MoveHexagons(hexagonsToAdd, gridCell);
             yield return CheckForCompleteStack(gridCell, gridCellTopHexColor);
         }
 
@@ -145,60 +143,57 @@ namespace HexaSort.Scripts.Manager
             }
         }
 
-        private void MoveHexagons(List<Hexagon> hexagonsToAdd, GridCell gridCell)
+        private IEnumerator MoveHexagons(List<Hexagon> toAdd, GridCell cell)
         {
-            float initialY = gridCell.Stack.Hexagons.Count * .2f;
+            float startY = cell.Stack.Hexagons.Count * .2f;
+            Sequence allMoves = DOTween.Sequence();         
 
-            for (int i = 0; i < hexagonsToAdd.Count; i++)
+            for (int i = 0; i < toAdd.Count; i++)
             {
-                Hexagon hexagon = hexagonsToAdd[i];
+                var hex = toAdd[i];
+                Vector3 localPos = Vector3.up * (startY + i * .2f);
 
-                float targetY = initialY + i * .2f;
-                Vector3 targetLocalPos = Vector3.up * targetY;
-                
-                gridCell.Stack.AddHexagon(hexagon);
-                hexagon.MoveToLocal(targetLocalPos);
+                cell.Stack.AddHexagon(hex);
+
+                float delay   = hex.transform.GetSiblingIndex() * .05f;
+                float dur     = .2f;
+
+                allMoves.Insert(delay, hex.transform.DOLocalMove(localPos, dur).SetEase(Ease.InOutSine));
+                allMoves.Insert(delay, hex.transform.DOLocalRotate(new Vector3(180,0,0), dur, RotateMode.LocalAxisAdd).SetEase(Ease.Linear));
             }
+
+            allMoves.SetLink(cell.gameObject, LinkBehaviour.KillOnDestroy);
+            yield return allMoves.WaitForCompletion();  
         }
 
-        private IEnumerator CheckForCompleteStack(GridCell gridCell, Color topColor)
+        private IEnumerator CheckForCompleteStack(GridCell cell, Color topColor)
         {
-            if (gridCell.Stack.Hexagons.Count < 10)
-                yield break;
-            
-            List<Hexagon> similarHexagons = new List<Hexagon>();
+            if (cell.Stack.Hexagons.Count < 10) yield break;
 
-            for (int i = gridCell.Stack.Hexagons.Count - 1; i >= 0; i--)
+            var vanishing = new List<Hexagon>();
+            for (int i = cell.Stack.Hexagons.Count - 1; i >= 0; i--)
             {
-                Hexagon hexagon = gridCell.Stack.Hexagons[i];
+                var h = cell.Stack.Hexagons[i];
+                if (h.Color != topColor) break;
+                vanishing.Add(h);
+            }
+            if (vanishing.Count < 10) yield break;
 
-                if (hexagon.Color != topColor)
-                    break;
-                
-                similarHexagons.Add(hexagon);
+            float delayStep = .01f;
+            float delay     = 0f;
+            foreach (var h in vanishing)
+            {
+                h.Vanish(delay);
+                cell.Stack.RemoveHexagon(h); 
+                delay += delayStep;
             }
 
-            if (similarHexagons.Count < 10)
-                yield break;
+            yield return new WaitForSeconds(delay + 0.2f);
 
-            float delay = 0;
-            
-            foreach (var hex in similarHexagons)
+            if (cell.Stack.Hexagons.Count == 0)
             {
-                hex.transform.SetParent(null);
-                hex.Vanish(delay);
-                delay += .01f;
-                
-                gridCell.Stack.RemoveHexagon(hex);
-            }
-            similarHexagons.Clear();
-
-            yield return new WaitForSeconds(0.2f + (similarHexagons.Count +1) * .1f);
-            
-            if (gridCell.Stack.Hexagons.Count == 0)
-            {
-                Destroy(gridCell.Stack.gameObject);
-                gridCell.ClearHexStack();
+                Destroy(cell.Stack.gameObject);
+                cell.ClearHexStack();
             }
         }
     }

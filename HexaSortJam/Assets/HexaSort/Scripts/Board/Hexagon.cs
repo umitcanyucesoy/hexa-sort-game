@@ -9,6 +9,8 @@ namespace HexaSort.Scripts.Board
         [SerializeField] private new Renderer renderer;
         [SerializeField] private Collider hexagonCollider;
         
+        private bool _isVanishing;
+        
         public HexStack HexStack { get; private set; }
         public Color Color { get => renderer.material.color; set => renderer.material.color = value; }
 
@@ -21,23 +23,19 @@ namespace HexaSort.Scripts.Board
         {
             hexagonCollider.enabled = false;
         }
-
-        public void MoveToLocal(Vector3 targetLocalPos)
-        {
-            transform.DOLocalMove(targetLocalPos, .2f)
-                .SetEase(Ease.InOutSine)
-                .SetDelay(transform.GetSiblingIndex() * .01f);
-        }
-
+        
         public void Vanish(float delay)
         {
+            if (_isVanishing) return;      
+            _isVanishing = true;
+    
             transform.SetParent(null, true);
-            
-            transform.DOKill();
-            transform.DOScale(Vector3.zero, 0.2f)
-                .SetEase(Ease.InBack)
-                .SetDelay(delay)
-                .OnComplete(() => Destroy(gameObject));
+
+            DOTween.Sequence()
+                .SetLink(gameObject, LinkBehaviour.KillOnDestroy)
+                .AppendInterval(delay)
+                .Append(transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack))
+                .AppendCallback(() => Destroy(gameObject));
         }
     }
 }
