@@ -13,8 +13,12 @@ namespace HexaSort.Scripts.Board
         private Material _material;
         
         public HexStack HexStack { get; private set; }
-        public Material Material => _material;
-        
+        public Material Material
+        {
+            get => _material;
+            set => _material = value;
+        }
+
         public void Configure(HexStack hexStack)
         {
             HexStack = hexStack;

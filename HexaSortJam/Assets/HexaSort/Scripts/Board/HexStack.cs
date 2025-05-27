@@ -20,6 +20,16 @@ namespace HexaSort.Scripts.Board
             return Hexagons[^1].Material;
         }
 
+        public void Initialize()
+        {
+            Hexagons.Clear();
+            
+            for (int i = 0; i < transform.childCount; i++)
+                AddHexagon(transform.GetChild(i).GetComponent<Hexagon>());
+            
+            PlacedHexagon();
+        }
+
         public void AddHexagon(Hexagon hexagon)
         {
             Hexagons ??= new List<Hexagon>();
@@ -37,7 +47,6 @@ namespace HexaSort.Scripts.Board
         public void RemoveHexagon(Hexagon hexagon)
         {
             Hexagons.Remove(hexagon);
-        } 
-            
+        }
     }
 }
